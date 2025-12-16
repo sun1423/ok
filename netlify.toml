@@ -1,0 +1,4 @@
+[[redirects]]
+  from = "/*"
+  to = "https://osho.xrpboss14.workers.dev"
+  status = 301
