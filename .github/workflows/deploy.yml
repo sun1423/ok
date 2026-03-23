@@ -28,11 +28,9 @@ jobs:
 
       - name: 🔑 Inject Gemini API key from secret
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
         run: |
-          # Safely replace the placeholder with the real key from GitHub Secrets
-          # The key NEVER appears in your repo source code
-          sed -i "s|%%GEMINI_API_KEY%%|${GEMINI_API_KEY}|g" index.html
+          sed -i "s|%%GEMINI_KEY%%|${GEMINI_KEY}|g" index.html
           echo "✅ Key injected into build"
 
       - name: ⚙️ Configure GitHub Pages
