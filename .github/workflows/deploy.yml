@@ -1,45 +1,48 @@
 name: Deploy to GitHub Pages
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
 permissions:
   contents: read
   pages: write
   id-token: write
+
 concurrency:
   group: "pages"
   cancel-in-progress: false
+
 jobs:
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - name: ✅ Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔑 Inject Gemini API key from secret
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          # Safely replace the placeholder with the real key from GitHub Secrets
+          # The key NEVER appears in your repo source code
+          sed -i "s|%%GEMINI_API_KEY%%|${GEMINI_API_KEY}|g" index.html
+          echo "✅ Key injected into build"
+
+      - name: ⚙️ Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: 📦 Upload site to Pages
+        uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
-      - id: deployment
+
+      - name: 🚀 Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
-```
-4. Click **Commit changes**
-
----
-
-### Step 5 — Enable GitHub Pages
-1. Click **Settings** tab (in your repo)
-2. Scroll down → click **Pages** in the left sidebar
-3. Under **Source** → select **GitHub Actions**
-4. Click **Save**
-
----
-
-### Step 6 — Watch it go live!
-1. Click the **Actions** tab
-2. You'll see a workflow running — wait ~30 seconds ⏳
-3. Once it shows ✅ green, your app is live at:
-```
-https://YOUR-USERNAME.github.io/devops-agent
