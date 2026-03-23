@@ -377,7 +377,16 @@
 </div>
 
 <script>
-let apiKey = localStorage.getItem('gm_key') || '%%GEMINI_API_KEY%%';
+// Key injected by GitHub Actions at build time
+const INJECTED_KEY = '%%GEMINI_KEY%%';
+const HAS_INJECTED_KEY = !INJECTED_KEY.startsWith('%%');
+
+// Always prefer the injected key — clear any stale localStorage value
+if (HAS_INJECTED_KEY) {
+  localStorage.setItem('gm_key', INJECTED_KEY);
+}
+
+let apiKey = HAS_INJECTED_KEY ? INJECTED_KEY : (localStorage.getItem('gm_key') || '');
 let model  = localStorage.getItem('gm_model') || 'gemini-2.0-flash';
 let sysCtx = localStorage.getItem('gm_ctx') || '';
 let chips  = {docker:true,github:true,deploy:true,k8s:false,sec:false};
@@ -385,16 +394,16 @@ let conv   = [];
 let recent = JSON.parse(localStorage.getItem('gm_recent')||'[]');
 
 function init() {
-  // If key was injected by GitHub Actions, use it directly
-  if (apiKey && !apiKey.includes('%%GEMINI')) {
-    localStorage.setItem('gm_key', apiKey);
+  if (apiKey) {
     setStatus(true);
-    const cfgBtn = document.querySelector('.cfg-btn');
-    if (cfgBtn) cfgBtn.textContent = '✅ Key Active';
+    if (HAS_INJECTED_KEY) {
+      // Key came from GitHub Secrets — show it's active, no config needed
+      const cfgBtn = document.querySelector('.cfg-btn');
+      if (cfgBtn) cfgBtn.textContent = '✅ Key Active';
+    }
   } else {
-    apiKey = localStorage.getItem('gm_key') || '';
-    if (apiKey) setStatus(true);
-    else setTimeout(openModal, 600);
+    // No key anywhere — ask user to configure
+    setTimeout(openModal, 600);
   }
   document.getElementById('keyIn').value = apiKey;
   document.getElementById('modelSel').value = model;
