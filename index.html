@@ -358,9 +358,10 @@
     <div class="mf">
       <label>Model</label>
       <select id="modelSel">
-        <option value="gemini-2.0-flash">gemini-2.0-flash — fastest, recommended</option>
-        <option value="gemini-1.5-flash">gemini-1.5-flash — stable, 1M context</option>
-        <option value="gemini-1.5-pro">gemini-1.5-pro — most capable, slower</option>
+        <option value="gemini-2.5-flash">gemini-2.5-flash — recommended ✓</option>
+        <option value="gemini-2.0-flash">gemini-2.0-flash — fast</option>
+        <option value="gemini-1.5-flash">gemini-1.5-flash — stable</option>
+        <option value="gemini-1.5-pro">gemini-1.5-pro — most capable</option>
       </select>
     </div>
     <div class="mf">
@@ -387,7 +388,7 @@ if (HAS_INJECTED_KEY) {
 }
 
 let apiKey = HAS_INJECTED_KEY ? INJECTED_KEY : (localStorage.getItem('gm_key') || '');
-let model  = localStorage.getItem('gm_model') || 'gemini-2.0-flash';
+let model  = localStorage.getItem('gm_model') || 'gemini-2.5-flash';
 let sysCtx = localStorage.getItem('gm_ctx') || '';
 let chips  = {docker:true,github:true,deploy:true,k8s:false,sec:false};
 let conv   = [];
