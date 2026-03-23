@@ -291,6 +291,10 @@
         <div class="ci" onclick="fire('Write a zero-downtime blue-green deployment script using Docker and nginx')"><span class="ic">🚀</span>Zero downtime<span class="badge by">Deploy</span></div>
         <div class="ci" onclick="fire('Generate Kubernetes Deployment + Service + Ingress YAML with HPA and resource limits')"><span class="ic">☸️</span>K8s YAML<span class="badge by">Deploy</span></div>
         <div class="ci" onclick="fire('Docker security hardening checklist for production containers')"><span class="ic">🛡</span>Security audit<span class="badge bd">Docker</span></div>
+        <div class="ci" onclick="fire('Write Terraform code to provision an AWS EC2 instance with VPC, security groups, and SSH access')"><span class="ic">🌍</span>AWS EC2 infra<span class="badge by">Terraform</span></div>
+        <div class="ci" onclick="fire('Write Terraform code to create an S3 bucket with versioning, encryption, and lifecycle policies')"><span class="ic">🪣</span>S3 bucket<span class="badge by">Terraform</span></div>
+        <div class="ci" onclick="fire('Generate a Terraform module structure best practices with variables, outputs, and remote state')"><span class="ic">📦</span>TF modules<span class="badge by">Terraform</span></div>
+        <div class="ci" onclick="fire('Write Terraform to provision a Kubernetes cluster on AWS EKS with node groups and IAM roles')"><span class="ic">☸️</span>EKS cluster<span class="badge by">Terraform</span></div>
       </div>
     </div>
     <div class="sb-hist">
@@ -306,7 +310,7 @@
         <div class="wico">🤖</div>
         <h2>DevOps Agent <span>× Gemini</span></h2>
         <p>Powered by <strong style="color:var(--blue)">Google Gemini 2.0 Flash</strong> — <strong style="color:var(--green)">100% free</strong>, no credit card needed.<br>
-        Ask me anything about <strong style="color:var(--blue)">Docker</strong>, <strong style="color:var(--green)">GitHub Actions</strong>, and <strong style="color:var(--yellow)">deployments</strong>.</p>
+        Ask me anything about <strong style="color:var(--blue)">Docker</strong>, <strong style="color:var(--green)">GitHub Actions</strong>, <strong style="color:var(--yellow)">deployments</strong>, and <strong style="color:#b06a00">Terraform</strong>.</p>
         <div class="qa-grid">
           <button class="qa" onclick="fire('Write a production-ready multi-stage Dockerfile for a Node.js Express API')"><span class="qi">🐳</span><span class="qt">Dockerfile</span>Multi-stage, secure</button>
           <button class="qa" onclick="fire('Create a full GitHub Actions CI/CD pipeline: build Docker image, push GHCR, deploy via SSH')"><span class="qi">⚡</span><span class="qt">CI/CD Pipeline</span>Build → Test → Deploy</button>
@@ -314,6 +318,8 @@
           <button class="qa" onclick="fire('Write a zero-downtime deployment script using Docker rolling updates and nginx healthchecks')"><span class="qi">🚀</span><span class="qt">Zero Downtime</span>Rolling deploy script</button>
           <button class="qa" onclick="fire('Generate Kubernetes Deployment with HPA, liveness probes, resource limits, and Ingress')"><span class="qi">☸️</span><span class="qt">Kubernetes</span>Full deployment YAML</button>
           <button class="qa" onclick="fire('Docker container security hardening: complete best practices for production')"><span class="qi">🛡</span><span class="qt">Security</span>Container hardening</button>
+          <button class="qa" onclick="fire('Write Terraform to provision AWS EC2, VPC, security groups, and RDS with best practices')"><span class="qi">🌍</span><span class="qt">Terraform</span>AWS infra as code</button>
+          <button class="qa" onclick="fire('Generate Terraform remote state setup with S3 backend and DynamoDB locking')"><span class="qi">🔒</span><span class="qt">TF Remote State</span>S3 + DynamoDB lock</button>
         </div>
         <p style="font-size:11px;color:var(--text2);margin-top:4px;">⚙ Click <strong style="color:var(--text3)">Configure</strong> → add your free Gemini API key to begin</p>
       </div>
@@ -326,6 +332,7 @@
         <div class="chip cy" id="c-deploy" onclick="toggleChip('deploy')">🚀 Deploy</div>
         <div class="chip cd off" id="c-k8s" onclick="toggleChip('k8s')">☸️ Kubernetes</div>
         <div class="chip cg off" id="c-sec" onclick="toggleChip('sec')">🛡 Security</div>
+        <div class="chip cy off" id="c-tf" onclick="toggleChip('tf')">🌍 Terraform</div>
       </div>
       <div class="inp-wrap">
         <textarea id="ui" placeholder="Ask anything about Docker, GitHub Actions, deployments, Kubernetes..." rows="1"
@@ -390,7 +397,7 @@ if (HAS_INJECTED_KEY) {
 let apiKey = HAS_INJECTED_KEY ? INJECTED_KEY : (localStorage.getItem('gm_key') || '');
 let model  = localStorage.getItem('gm_model') || 'gemini-2.5-flash';
 let sysCtx = localStorage.getItem('gm_ctx') || '';
-let chips  = {docker:true,github:true,deploy:true,k8s:false,sec:false};
+let chips  = {docker:true,github:true,deploy:true,k8s:false,sec:false,tf:false};
 let conv   = [];
 let recent = JSON.parse(localStorage.getItem('gm_recent')||'[]');
 
@@ -484,6 +491,7 @@ async function callGemini() {
 - Deployments: Zero-downtime, nginx, SSL/TLS, shell scripting, VPS setup, cloud providers
 - Kubernetes: Deployments, services, ingress, HPA, secrets, ConfigMaps
 - Security: Image scanning, secrets management, RBAC, least-privilege
+- Terraform: IaC best practices, AWS/GCP/Azure providers, modules, remote state, workspaces, import, drift detection
 
 Active focus: ${active.join(', ')}
 ${sysCtx?`User stack: ${sysCtx}`:''}
