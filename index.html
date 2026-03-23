@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevOps AI Agent · Gemini</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;800&display=swap');
+
+  :root {
+    --bg: #f0f4f9; --bg2: #ffffff; --bg3: #e8eef6;
+    --border: #d0daea; --border2: #b8c8de;
+    --blue: #1a73e8; --green: #1e8e3e; --yellow: #f29900; --red: #d93025;
+    --text: #1a2332; --text2: #6b7a8d; --text3: #3d5068;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg); color: var(--text);
+    height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+  }
+  body::before {
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:9999;
+    background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(26,115,232,.018) 2px,rgba(26,115,232,.018) 4px);
+  }
+
+  /* ── Header ── */
+  .hdr {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:11px 22px; border-bottom:1px solid var(--border); background:var(--bg2); flex-shrink:0;
+  }
+  .logo { display:flex; align-items:center; gap:11px; }
+  .logo-icon {
+    width:34px; height:34px; border-radius:9px;
+    background:linear-gradient(135deg,#4285f4,#34a853);
+    display:flex; align-items:center; justify-content:center; font-size:18px;
+  }
+  .logo-txt { font-family:'Syne',sans-serif; font-weight:800; font-size:17px; letter-spacing:-.5px; }
+  .logo-txt .b{color:#4285f4} .logo-txt .r{color:#ea4335} .logo-txt .y{color:#fbbc04} .logo-txt .g2{color:#34a853}
+  .logo-sub { font-size:10px; color:var(--text2); letter-spacing:2px; text-transform:uppercase; }
+  .hdr-r { display:flex; align-items:center; gap:14px; }
+  .status {
+    display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text2);
+    background:var(--bg3); border:1px solid var(--border2); padding:5px 12px; border-radius:20px;
+  }
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--red); box-shadow:0 0 8px var(--red); animation:pulse 2s infinite; }
+  .dot.on { background:var(--green); box-shadow:0 0 8px var(--green); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .cfg-btn {
+    background:var(--bg3); border:1px solid var(--border2); color:var(--text3);
+    font-family:'JetBrains Mono',monospace; font-size:11px; padding:6px 13px;
+    border-radius:6px; cursor:pointer; transition:all .2s;
+  }
+  .cfg-btn:hover { border-color:var(--blue); color:var(--blue); }
+
+  /* ── Layout ── */
+  .main { display:flex; flex:1; overflow:hidden; }
+
+  /* ── Sidebar ── */
+  .sb {
+    width:234px; flex-shrink:0; background:var(--bg2);
+    border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden;
+  }
+  .sb-sec { padding:13px; border-bottom:1px solid var(--border); }
+  .sb-lbl { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--text2); margin-bottom:8px; }
+  .cmd { display:flex; flex-direction:column; gap:2px; }
+  .ci {
+    display:flex; align-items:center; gap:7px; padding:7px 8px; border-radius:6px;
+    cursor:pointer; font-size:11px; color:var(--text3); transition:all .15s; border:1px solid transparent;
+  }
+  .ci:hover { background:var(--bg3); color:var(--text); border-color:var(--border2); }
+  .ci .ic { font-size:13px; width:15px; text-align:center; }
+  .badge {
+    margin-left:auto; font-size:9px; padding:2px 5px; border-radius:3px;
+  }
+  .bd { background:rgba(26,115,232,.1); color:#1a73e8; border:1px solid rgba(26,115,232,.25); }
+  .bg { background:rgba(30,142,62,.1); color:#1e8e3e; border:1px solid rgba(30,142,62,.25); }
+  .by { background:rgba(242,153,0,.1); color:#b06a00; border:1px solid rgba(242,153,0,.25); }
+  .sb-hist { flex:1; padding:13px; overflow-y:auto; }
+  .hi {
+    padding:7px 8px; border-radius:5px; font-size:11px; color:var(--text2);
+    cursor:pointer; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:all .15s;
+  }
+  .hi:hover { background:var(--bg3); color:var(--text3); }
+
+  /* ── Chat area ── */
+  .chat { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .msgs {
+    flex:1; overflow-y:auto; padding:22px;
+    display:flex; flex-direction:column; gap:15px; scroll-behavior:smooth;
+  }
+  .msgs::-webkit-scrollbar{width:4px} .msgs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+  /* ── Welcome ── */
+  .welcome {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    flex:1; gap:18px; padding:36px; text-align:center;
+  }
+  .wico {
+    width:70px; height:70px; border-radius:18px;
+    background:linear-gradient(135deg,rgba(26,115,232,.12),rgba(30,142,62,.12));
+    border:1px solid var(--border2); display:flex; align-items:center; justify-content:center; font-size:34px;
+  }
+  .welcome h2 { font-family:'Syne',sans-serif; font-size:23px; font-weight:800; }
+  .welcome h2 span{color:var(--blue)}
+  .welcome p { font-size:12px; color:var(--text2); max-width:450px; line-height:1.8; }
+  .qa-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:570px; width:100%; }
+  .qa {
+    background:var(--bg2); border:1px solid var(--border); color:var(--text3);
+    font-family:'JetBrains Mono',monospace; font-size:11px; padding:11px;
+    border-radius:8px; cursor:pointer; text-align:left; transition:all .2s;
+    display:flex; flex-direction:column; gap:3px;
+  }
+  .qa:hover { border-color:var(--blue); color:var(--text); background:var(--bg3); transform:translateY(-1px); }
+  .qa .qi{font-size:15px;margin-bottom:2px} .qa .qt{font-weight:700;color:var(--text);font-size:11px}
+
+  /* ── Messages ── */
+  .msg { display:flex; gap:11px; max-width:910px; animation:fadeUp .3s ease; }
+  .msg.user { flex-direction:row-reverse; align-self:flex-end; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .av {
+    width:31px; height:31px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;
+  }
+  .msg.user .av { background:linear-gradient(135deg,#5f6368,#3c4043); }
+  .msg.agent .av { background:linear-gradient(135deg,#4285f4,#34a853); }
+  .mb { display:flex; flex-direction:column; gap:4px; max-width:calc(100% - 46px); }
+  .mm { font-size:10px; color:var(--text2); display:flex; gap:8px; align-items:center; }
+  .msg.user .mm { flex-direction:row-reverse; }
+  .mn { font-weight:700; }
+  .msg.agent .mn{color:var(--blue)} .msg.user .mn{color:var(--text3)}
+  .bbl { padding:13px 15px; border-radius:10px; font-size:13px; line-height:1.75; }
+  .msg.user .bbl {
+    background:rgba(26,115,232,.08); border:1px solid rgba(26,115,232,.2);
+    border-top-right-radius:2px; color:var(--text);
+  }
+  .msg.agent .bbl {
+    background:var(--bg2); border:1px solid var(--border);
+    border-top-left-radius:2px; color:var(--text);
+  }
+  .bbl pre {
+    background:#f6f8fa; border:1px solid var(--border2); border-radius:6px;
+    padding:12px; margin:10px 0; overflow-x:auto; font-size:12px; line-height:1.6; position:relative;
+  }
+  .cpbtn {
+    position:absolute; top:6px; right:8px; background:var(--bg2);
+    border:1px solid var(--border2); color:var(--text2);
+    font-family:'JetBrains Mono',monospace; font-size:9px;
+    padding:2px 7px; border-radius:3px; cursor:pointer; transition:all .2s; letter-spacing:.5px;
+  }
+  .cpbtn:hover { border-color:var(--blue); color:var(--blue); }
+  .bbl code {
+    font-family:'JetBrains Mono',monospace; background:rgba(26,115,232,.08);
+    color:var(--blue); padding:1px 5px; border-radius:3px; font-size:12px;
+  }
+  .bbl pre code { background:transparent; color:#1a5c1a; padding:0; }
+  .bbl h3 { font-family:'Syne',sans-serif; font-size:14px; color:var(--blue); margin:11px 0 5px; }
+  .bbl ul,.bbl ol { padding-left:20px; margin:6px 0; }
+  .bbl li { margin:4px 0; }
+  .bbl strong { color:#b06a00; }
+  .bbl a { color:var(--blue); }
+  .bbl hr { border:none; border-top:1px solid var(--border); margin:11px 0; }
+
+  /* ── Typing ── */
+  .typing { display:flex; gap:5px; align-items:center; padding:4px 0; }
+  .typing span { width:7px; height:7px; border-radius:50%; animation:bnc 1.2s infinite; }
+  .typing span:nth-child(1){background:#1a73e8}
+  .typing span:nth-child(2){background:#d93025;animation-delay:.2s}
+  .typing span:nth-child(3){background:#f29900;animation-delay:.4s}
+  .typing span:nth-child(4){background:#1e8e3e;animation-delay:.6s}
+  @keyframes bnc { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-7px)} }
+
+  /* ── Input ── */
+  .inp-area {
+    padding:13px 22px 15px; border-top:1px solid var(--border);
+    background:var(--bg2); flex-shrink:0;
+  }
+  .chips { display:flex; gap:5px; margin-bottom:9px; flex-wrap:wrap; }
+  .chip {
+    font-size:10px; padding:3px 9px; border-radius:4px; cursor:pointer;
+    transition:all .15s; border:1px solid transparent;
+    display:flex; align-items:center; gap:3px; user-select:none;
+  }
+  .chip.cd { background:rgba(26,115,232,.1); color:#1a73e8; border-color:rgba(26,115,232,.25); }
+  .chip.cg { background:rgba(30,142,62,.1); color:#1e8e3e; border-color:rgba(30,142,62,.25); }
+  .chip.cy { background:rgba(242,153,0,.1); color:#b06a00; border-color:rgba(242,153,0,.25); }
+  .chip.off { opacity:.32; }
+  .inp-wrap {
+    display:flex; gap:9px; align-items:flex-end;
+    background:var(--bg3); border:1px solid var(--border2);
+    border-radius:10px; padding:8px 11px; transition:border-color .2s;
+  }
+  .inp-wrap:focus-within { border-color:var(--blue); box-shadow:0 0 0 2px rgba(66,133,244,.08); }
+  #ui {
+    flex:1; background:transparent; border:none; outline:none;
+    color:var(--text); font-family:'JetBrains Mono',monospace;
+    font-size:13px; resize:none; max-height:120px; min-height:22px; line-height:1.6;
+  }
+  #ui::placeholder { color:var(--text2); }
+  .snd {
+    background:linear-gradient(135deg,var(--blue),var(--green));
+    border:none; color:#fff; width:33px; height:33px; border-radius:8px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    font-size:14px; transition:opacity .2s,transform .1s;
+  }
+  .snd:hover{opacity:.85;transform:scale(1.05)} .snd:active{transform:scale(.95)} .snd:disabled{opacity:.3;cursor:not-allowed;transform:none}
+  .inp-foot { display:flex; justify-content:space-between; margin-top:7px; font-size:10px; color:var(--text2); }
+  .kbd { display:inline-flex; padding:1px 5px; background:var(--bg3); border:1px solid var(--border2); border-radius:3px; font-size:10px; color:var(--text3); }
+
+  /* ── Modal ── */
+  .ovl {
+    position:fixed; inset:0; background:rgba(0,0,0,.75);
+    z-index:100; display:none; align-items:center; justify-content:center; backdrop-filter:blur(4px);
+  }
+  .ovl.open { display:flex; }
+  .modal {
+    background:var(--bg2); border:1px solid var(--border2); border-radius:14px;
+    padding:26px; width:496px; max-width:92vw; animation:mIn .25s ease;
+  }
+  @keyframes mIn { from{opacity:0;transform:scale(.95) translateY(12px)} to{opacity:1;transform:scale(1) translateY(0)} }
+  .mhead { display:flex; align-items:center; gap:10px; margin-bottom:5px; }
+  .modal h3 { font-family:'Syne',sans-serif; font-size:17px; font-weight:800; }
+  .free-tag {
+    font-size:10px; padding:2px 8px; border-radius:4px;
+    background:rgba(30,142,62,.1); color:var(--green); border:1px solid rgba(30,142,62,.3);
+  }
+  .modal > p { font-size:12px; color:var(--text2); line-height:1.7; margin-bottom:18px; }
+  .mf { margin-bottom:13px; }
+  .mf label { display:block; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text2); margin-bottom:5px; }
+  .mf input, .mf select {
+    width:100%; background:var(--bg3); border:1px solid var(--border2);
+    color:var(--text); font-family:'JetBrains Mono',monospace;
+    font-size:12px; padding:9px 11px; border-radius:6px; outline:none; transition:border-color .2s;
+  }
+  .mf input:focus,.mf select:focus { border-color:var(--blue); }
+  .mf select option { background:var(--bg3); }
+  .mhint { font-size:11px; color:var(--text2); margin-top:4px; }
+  .mhint a { color:var(--blue); text-decoration:none; }
+  .mhint a:hover { text-decoration:underline; }
+  .notice { font-size:11px; padding:8px 11px; border-radius:6px; margin-top:9px; display:none; }
+  .notice.err { background:rgba(217,48,37,.08); border:1px solid rgba(217,48,37,.3); color:var(--red); display:block; }
+  .notice.ok  { background:rgba(30,142,62,.08); border:1px solid rgba(30,142,62,.3);  color:var(--green); display:block; }
+  .mbtns { display:flex; gap:9px; margin-top:18px; justify-content:flex-end; }
+  .btn-x {
+    background:transparent; border:1px solid var(--border2); color:var(--text3);
+    font-family:'JetBrains Mono',monospace; font-size:12px; padding:8px 17px; border-radius:6px; cursor:pointer; transition:all .2s;
+  }
+  .btn-x:hover { border-color:var(--red); color:var(--red); }
+  .btn-ok {
+    background:linear-gradient(135deg,var(--blue),var(--green)); border:none; color:#fff;
+    font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px;
+    padding:8px 22px; border-radius:6px; cursor:pointer; transition:opacity .2s;
+  }
+  .btn-ok:hover { opacity:.85; }
+  ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo">
+    <div class="logo-icon">🤖</div>
+    <div>
+      <div class="logo-txt">
+        <span class="b">D</span><span class="r">e</span><span class="y">v</span><span class="g2">O</span>ps Agent
+      </div>
+      <div class="logo-sub">Powered by Gemini · Free · Self-Hostable</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div class="status">
+      <div class="dot" id="dot"></div>
+      <span id="stxt">No API Key</span>
+    </div>
+    <button class="cfg-btn" onclick="openModal()">⚙ Configure</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- Sidebar -->
+  <div class="sb">
+    <div class="sb-sec">
+      <div class="sb-lbl">Quick Commands</div>
+      <div class="cmd">
+        <div class="ci" onclick="fire('Write a production Dockerfile for Node.js with multi-stage build and non-root user')"><span class="ic">🐳</span>Dockerfile<span class="badge bd">Docker</span></div>
+        <div class="ci" onclick="fire('Generate docker-compose.yml: Node.js + PostgreSQL + Redis + nginx + SSL certbot')"><span class="ic">🗂</span>Compose stack<span class="badge bd">Docker</span></div>
+        <div class="ci" onclick="fire('Give me a Docker daily-use cheat sheet with the most important commands and examples')"><span class="ic">📋</span>Cheat sheet<span class="badge bd">Docker</span></div>
+        <div class="ci" onclick="fire('Create a GitHub Actions workflow: lint → test → build Docker image → push to GHCR → SSH deploy')"><span class="ic">⚡</span>CI/CD pipeline<span class="badge bg">GitHub</span></div>
+        <div class="ci" onclick="fire('Set up GitHub branch protection for main: required reviews, status checks, no force push')"><span class="ic">🔒</span>Branch rules<span class="badge bg">GitHub</span></div>
+        <div class="ci" onclick="fire('Auto semantic versioning and CHANGELOG generation with GitHub Actions')"><span class="ic">🏷</span>Auto versioning<span class="badge bg">GitHub</span></div>
+        <div class="ci" onclick="fire('Write a zero-downtime blue-green deployment script using Docker and nginx')"><span class="ic">🚀</span>Zero downtime<span class="badge by">Deploy</span></div>
+        <div class="ci" onclick="fire('Generate Kubernetes Deployment + Service + Ingress YAML with HPA and resource limits')"><span class="ic">☸️</span>K8s YAML<span class="badge by">Deploy</span></div>
+        <div class="ci" onclick="fire('Docker security hardening checklist for production containers')"><span class="ic">🛡</span>Security audit<span class="badge bd">Docker</span></div>
+      </div>
+    </div>
+    <div class="sb-hist">
+      <div class="sb-lbl">Recent</div>
+      <div id="histList"></div>
+    </div>
+  </div>
+
+  <!-- Chat -->
+  <div class="chat">
+    <div class="msgs" id="msgs">
+      <div class="welcome" id="welcome">
+        <div class="wico">🤖</div>
+        <h2>DevOps Agent <span>× Gemini</span></h2>
+        <p>Powered by <strong style="color:var(--blue)">Google Gemini 2.0 Flash</strong> — <strong style="color:var(--green)">100% free</strong>, no credit card needed.<br>
+        Ask me anything about <strong style="color:var(--blue)">Docker</strong>, <strong style="color:var(--green)">GitHub Actions</strong>, and <strong style="color:var(--yellow)">deployments</strong>.</p>
+        <div class="qa-grid">
+          <button class="qa" onclick="fire('Write a production-ready multi-stage Dockerfile for a Node.js Express API')"><span class="qi">🐳</span><span class="qt">Dockerfile</span>Multi-stage, secure</button>
+          <button class="qa" onclick="fire('Create a full GitHub Actions CI/CD pipeline: build Docker image, push GHCR, deploy via SSH')"><span class="qi">⚡</span><span class="qt">CI/CD Pipeline</span>Build → Test → Deploy</button>
+          <button class="qa" onclick="fire('Generate docker-compose.yml for production: nginx, app, postgres, redis, certbot SSL')"><span class="qi">🗂</span><span class="qt">docker-compose</span>Full prod stack + SSL</button>
+          <button class="qa" onclick="fire('Write a zero-downtime deployment script using Docker rolling updates and nginx healthchecks')"><span class="qi">🚀</span><span class="qt">Zero Downtime</span>Rolling deploy script</button>
+          <button class="qa" onclick="fire('Generate Kubernetes Deployment with HPA, liveness probes, resource limits, and Ingress')"><span class="qi">☸️</span><span class="qt">Kubernetes</span>Full deployment YAML</button>
+          <button class="qa" onclick="fire('Docker container security hardening: complete best practices for production')"><span class="qi">🛡</span><span class="qt">Security</span>Container hardening</button>
+        </div>
+        <p style="font-size:11px;color:var(--text2);margin-top:4px;">⚙ Click <strong style="color:var(--text3)">Configure</strong> → add your free Gemini API key to begin</p>
+      </div>
+    </div>
+
+    <div class="inp-area">
+      <div class="chips">
+        <div class="chip cd" id="c-docker" onclick="toggleChip('docker')">🐳 Docker</div>
+        <div class="chip cg" id="c-github" onclick="toggleChip('github')">🐙 GitHub</div>
+        <div class="chip cy" id="c-deploy" onclick="toggleChip('deploy')">🚀 Deploy</div>
+        <div class="chip cd off" id="c-k8s" onclick="toggleChip('k8s')">☸️ Kubernetes</div>
+        <div class="chip cg off" id="c-sec" onclick="toggleChip('sec')">🛡 Security</div>
+      </div>
+      <div class="inp-wrap">
+        <textarea id="ui" placeholder="Ask anything about Docker, GitHub Actions, deployments, Kubernetes..." rows="1"
+          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="snd" id="sndBtn" onclick="send()" title="Send (Enter)">▶</button>
+      </div>
+      <div class="inp-foot">
+        <span><span class="kbd">Enter</span> send · <span class="kbd">Shift+Enter</span> newline</span>
+        <span id="mtag" style="color:var(--text2)">gemini-2.0-flash · free tier</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="ovl" id="ovl" onclick="bgClose(event)">
+  <div class="modal">
+    <div class="mhead">
+      <span style="font-size:22px">✨</span>
+      <h3>Configure Gemini API</h3>
+      <span class="free-tag">✓ FREE</span>
+    </div>
+    <p>Google Gemini offers a generous free tier: up to <strong style="color:var(--green)">1M tokens/day</strong> and <strong style="color:var(--green)">15 req/min</strong>. No credit card required — just a Google account.</p>
+
+    <div class="mf">
+      <label>Gemini API Key</label>
+      <input type="password" id="keyIn" placeholder="AIzaSy..." />
+      <div class="mhint">🔑 Get free key → <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a></div>
+    </div>
+    <div class="mf">
+      <label>Model</label>
+      <select id="modelSel">
+        <option value="gemini-2.0-flash">gemini-2.0-flash — fastest, recommended</option>
+        <option value="gemini-1.5-flash">gemini-1.5-flash — stable, 1M context</option>
+        <option value="gemini-1.5-pro">gemini-1.5-pro — most capable, slower</option>
+      </select>
+    </div>
+    <div class="mf">
+      <label>Your Stack Context <span style="color:var(--text2);font-size:10px;letter-spacing:0;text-transform:none">(optional)</span></label>
+      <input type="text" id="ctxIn" placeholder="e.g. Node.js, PostgreSQL, Ubuntu VPS, nginx, GitHub Actions" />
+      <div class="mhint">📝 Helps the agent tailor answers to your exact setup</div>
+    </div>
+    <div id="notice"></div>
+    <div class="mbtns">
+      <button class="btn-x" onclick="closeModal()">Cancel</button>
+      <button class="btn-ok" onclick="saveConfig()">Save & Connect ✓</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let apiKey = localStorage.getItem('gm_key') || '%%GEMINI_API_KEY%%';
+let model  = localStorage.getItem('gm_model') || 'gemini-2.0-flash';
+let sysCtx = localStorage.getItem('gm_ctx') || '';
+let chips  = {docker:true,github:true,deploy:true,k8s:false,sec:false};
+let conv   = [];
+let recent = JSON.parse(localStorage.getItem('gm_recent')||'[]');
+
+function init() {
+  // If key was injected by GitHub Actions, use it directly
+  if (apiKey && !apiKey.includes('%%GEMINI')) {
+    localStorage.setItem('gm_key', apiKey);
+    setStatus(true);
+    const cfgBtn = document.querySelector('.cfg-btn');
+    if (cfgBtn) cfgBtn.textContent = '✅ Key Active';
+  } else {
+    apiKey = localStorage.getItem('gm_key') || '';
+    if (apiKey) setStatus(true);
+    else setTimeout(openModal, 600);
+  }
+  document.getElementById('keyIn').value = apiKey;
+  document.getElementById('modelSel').value = model;
+  document.getElementById('ctxIn').value = sysCtx;
+  document.getElementById('mtag').textContent = model + ' · free tier';
+  renderRecent();
+}
+
+function setStatus(on) {
+  document.getElementById('dot').className = on ? 'dot on' : 'dot';
+  document.getElementById('stxt').textContent = on ? 'Gemini Connected ✓' : 'No API Key';
+}
+
+function openModal() { document.getElementById('ovl').classList.add('open'); }
+function closeModal() { document.getElementById('ovl').classList.remove('open'); }
+function bgClose(e) { if (e.target===document.getElementById('ovl')) closeModal(); }
+
+function saveConfig() {
+  const key = document.getElementById('keyIn').value.trim();
+  const mod = document.getElementById('modelSel').value;
+  const ctx = document.getElementById('ctxIn').value.trim();
+  const n   = document.getElementById('notice');
+  if (!key || key.length < 10) {
+    n.className='notice err'; n.textContent='⚠ Please enter a valid Gemini API key (starts with AIza...).'; return;
+  }
+  apiKey=key; model=mod; sysCtx=ctx;
+  localStorage.setItem('gm_key',key); localStorage.setItem('gm_model',mod); localStorage.setItem('gm_ctx',ctx);
+  document.getElementById('mtag').textContent = mod + ' · free tier';
+  n.className='notice ok'; n.textContent='✓ Saved! Agent is ready.';
+  setStatus(true);
+  setTimeout(closeModal, 900);
+}
+
+function toggleChip(name) {
+  chips[name] = !chips[name];
+  const el = document.getElementById('c-'+name);
+  chips[name] ? el.classList.remove('off') : el.classList.add('off');
+}
+
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} }
+function fire(t) { const ui=document.getElementById('ui'); ui.value=t; autoResize(ui); ui.focus(); }
+
+async function send() {
+  const inp = document.getElementById('ui');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  if (!apiKey) { openModal(); return; }
+
+  document.getElementById('welcome')?.remove();
+  addMsg('user', txt);
+  inp.value=''; inp.style.height='auto';
+
+  conv.push({ role:'user', parts:[{text:txt}] });
+  addRecent(txt);
+  const tid = addTyping();
+  document.getElementById('sndBtn').disabled = true;
+
+  try {
+    const reply = await callGemini();
+    removeTyping(tid);
+    addMsg('agent', reply);
+    conv.push({ role:'model', parts:[{text:reply}] });
+    if (conv.length > 30) conv = conv.slice(-30);
+  } catch(err) {
+    removeTyping(tid);
+    addMsg('agent', `⚠ **Error:** ${err.message}\n\nCheck your API key at [aistudio.google.com](https://aistudio.google.com)`);
+  }
+  document.getElementById('sndBtn').disabled = false;
+}
+
+async function callGemini() {
+  const active = Object.entries(chips).filter(([,v])=>v).map(([k])=>k);
+  const sys = `You are an expert DevOps AI Agent specializing in:
+- Docker: Dockerfiles, docker-compose, networking, multi-stage builds, optimization, security
+- GitHub: Actions CI/CD, branch protection, webhooks, releases, PR automation
+- Deployments: Zero-downtime, nginx, SSL/TLS, shell scripting, VPS setup, cloud providers
+- Kubernetes: Deployments, services, ingress, HPA, secrets, ConfigMaps
+- Security: Image scanning, secrets management, RBAC, least-privilege
+
+Active focus: ${active.join(', ')}
+${sysCtx?`User stack: ${sysCtx}`:''}
+
+Always provide:
+- Production-ready code (not just demos)
+- Comments explaining key decisions
+- Security considerations and common pitfalls
+- Clear formatted output with headers and code blocks`;
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const res = await fetch(url, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      system_instruction: { parts:[{text:sys}] },
+      contents: conv,
+      generationConfig: { temperature:0.7, maxOutputTokens:2048 }
+    })
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(()=>({}));
+    throw new Error(e?.error?.message || `HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('Empty response from Gemini. Try again.');
+  return text;
+}
+
+function addMsg(role, text) {
+  const msgs = document.getElementById('msgs');
+  const div  = document.createElement('div');
+  div.className = `msg ${role}`;
+  const time = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  div.innerHTML = `
+    <div class="av">${role==='user'?'👤':'✨'}</div>
+    <div class="mb">
+      <div class="mm"><span class="mn">${role==='user'?'You':'DevOps Agent'}</span><span>${time}</span></div>
+      <div class="bbl">${fmt(text)}</div>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  div.querySelectorAll('pre').forEach(pre => {
+    const btn = document.createElement('button');
+    btn.className='cpbtn'; btn.textContent='copy';
+    btn.onclick = () => {
+      navigator.clipboard.writeText(pre.querySelector('code')?.innerText||pre.innerText);
+      btn.textContent='copied!'; setTimeout(()=>btn.textContent='copy',2000);
+    };
+    pre.appendChild(btn);
+  });
+}
+
+function fmt(t) {
+  t = t.replace(/```(\w*)\n?([\s\S]*?)```/g,(_,l,c)=>`<pre><code>${esc(c.trim())}</code></pre>`);
+  t = t.replace(/`([^`\n]+)`/g,'<code>$1</code>');
+  t = t.replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>');
+  t = t.replace(/^#{1,3} (.+)$/gm,'<h3>$1</h3>');
+  t = t.replace(/^---$/gm,'<hr>');
+  t = t.replace(/^[-*] (.+)$/gm,'<li>$1</li>');
+  t = t.replace(/^\d+\. (.+)$/gm,'<li>$1</li>');
+  t = t.replace(/\n\n/g,'<br><br>');
+  t = t.replace(/\n/g,'<br>');
+  return t;
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function addTyping() {
+  const msgs=document.getElementById('msgs');
+  const id='ty-'+Date.now();
+  const div=document.createElement('div');
+  div.className='msg agent'; div.id=id;
+  div.innerHTML=`<div class="av">✨</div><div class="mb"><div class="mm"><span class="mn">DevOps Agent</span></div><div class="bbl"><div class="typing"><span></span><span></span><span></span><span></span></div></div></div>`;
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight; return id;
+}
+function removeTyping(id){document.getElementById(id)?.remove();}
+
+function addRecent(t) {
+  recent.unshift({t:t.slice(0,55),ts:Date.now()});
+  if(recent.length>12)recent=recent.slice(0,12);
+  localStorage.setItem('gm_recent',JSON.stringify(recent));
+  renderRecent();
+}
+function renderRecent() {
+  document.getElementById('histList').innerHTML = recent.slice(0,9).map(h=>
+    `<div class="hi" onclick="fire('${h.t.replace(/'/g,"\\'")}')">↩ ${h.t}</div>`
+  ).join('');
+}
+
+init();
+</script>
+</body>
+</html>
